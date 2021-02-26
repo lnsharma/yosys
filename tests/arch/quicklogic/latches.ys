@@ -1,0 +1,18 @@
+read_verilog v/latches.v
+design -save read
+
+# LATCHP
+synth_quicklogic -top latchp
+cd latchp
+stat
+select -assert-count 1 t:$lut
+select -assert-count 1 t:$*_FF_*
+
+# LATCHN
+design -load read
+synth_quicklogic -top latchn
+cd latchn
+stat
+select -assert-count 1 t:$lut
+select -assert-count 1 t:$*_FF_*
+
