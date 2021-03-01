@@ -184,16 +184,11 @@ struct SynthQuickLogicPass : public ScriptPass {
         }
 
         if (check_label("map_gates")) {
-            if(family == "qlf_k4n8") {
-                run("async2sync");
-            }
             if (inferAdder) {
                 run("techmap -map +/techmap.v -map +/quicklogic/" + family + "_arith_map.v");
             } else {
                 run("techmap");
             }
-            run("opt -fast");
-            
             run("opt -fast");
             run("opt_expr");
             run("opt_merge");
@@ -238,12 +233,12 @@ struct SynthQuickLogicPass : public ScriptPass {
         }
 
         if (check_label("edif")) {
-            if (!edif_file.empty() || help_mode)
+            if (!edif_file.empty())
                 run(stringf("write_edif -nogndvcc -attrprop -pvector par %s %s", this->currmodule.c_str(), edif_file.c_str()));
         }
 
         if (check_label("blif")) {
-            if (!blif_file.empty() || help_mode) {
+            if (!blif_file.empty()) {
                 run(stringf("opt_clean -purge"),
                         "                                 (qlf_k4n8 mode)");
                 if (inferAdder) {
