@@ -230,7 +230,8 @@ struct SynthQuickLogicPass : public ScriptPass {
 
         if (check_label("finalize")) {
             run("check");
-        }
+            run("opt_clean -purge");
+	}
 
         if (check_label("edif")) {
             if (!edif_file.empty())
@@ -239,8 +240,6 @@ struct SynthQuickLogicPass : public ScriptPass {
 
         if (check_label("blif")) {
             if (!blif_file.empty()) {
-                run(stringf("opt_clean -purge"),
-                        "                                 (qlf_k4n8 mode)");
                 if (inferAdder) {
                     run(stringf("write_blif -param %s", help_mode ? "<file-name>" : blif_file.c_str()));
                 } else {
