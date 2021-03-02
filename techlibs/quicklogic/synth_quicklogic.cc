@@ -212,15 +212,6 @@ struct SynthQuickLogicPass : public ScriptPass {
             run("opt_lut");
         }
 
-        if (check_label("map_cells")) {
-
-            std::string techMapArgs;
-            techMapArgs += " -D NO_LUT -map +/quicklogic/" + family + "_lut_map.v";
-            
-            run("techmap" + techMapArgs);
-            run("clean");
-        }
-
         if (check_label("check")) {
             run("autoname");
             run("hierarchy -check");
