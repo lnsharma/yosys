@@ -69,6 +69,21 @@ module scff(
         Q <= D;
 endmodule
 
+module bidir (
+    (* iopad_external_pin *)
+    input I_PAD,
+    input GPIO_IN,
+    input GPIO_EN,
+
+    (* iopad_external_pin *)
+    output O_PAD,
+    output GPIO_OUT
+);
+    // Behavioral model
+    assign GPIO_OUT = (GPIO_EN == 1'b1) ? I_PAD : 1'b0;
+    assign O_PAD = (GPIO_EN == 1'b0) ? GPIO_IN : 1'b0;
+endmodule
+
 module bipad (
     input A,
     input EN,
