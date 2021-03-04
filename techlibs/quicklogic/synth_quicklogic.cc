@@ -219,6 +219,10 @@ struct SynthQuickLogicPass : public ScriptPass {
             run("check -noinit");
         }
 
+        if (check_label("iomap")) {
+            run("iopadmap -bits -tinoutpad bipad EN:Q:A:P A:top");
+        }
+
         if (check_label("finalize")) {
             run("check");
             run("opt_clean -purge");
