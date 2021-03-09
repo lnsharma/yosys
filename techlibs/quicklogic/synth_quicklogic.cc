@@ -201,9 +201,7 @@ struct SynthQuickLogicPass : public ScriptPass {
             if (family == "qlf_k4n8") {
                 run("shregmap -minlen 8 -maxlen 8");
             }
-            if(!noffmap) {
-                run("techmap " + techMapArgs);
-            } 
+            run("techmap " + techMapArgs);
             run("opt_expr -mux_undef");
             run("simplemap");
             run("opt_expr");
