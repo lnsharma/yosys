@@ -97,7 +97,7 @@ module dffr(
     always @(posedge C or negedge R)
         if (!R)
             Q <= 1'b0;
-        else
+        else 
             Q <= D;
 endmodule
 
@@ -112,6 +112,24 @@ module sh_dff(
     initial Q = INIT;
 
     always @(posedge C)
+            Q <= D;
+endmodule
+
+(* abc9_flop, lib_whitebox *)
+module dffs(
+    output reg Q,
+    input D,
+    (* clkbuf_sink *)
+    input C,
+    input S
+);
+    parameter [0:0] INIT = 1'b0;
+    initial Q = INIT;
+
+    always @(posedge C or negedge S)
+        if (!S)
+            Q <= 1'b1;
+        else
             Q <= D;
 endmodule
 
