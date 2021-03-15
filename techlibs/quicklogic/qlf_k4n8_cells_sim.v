@@ -69,7 +69,7 @@ module scff(
         Q <= D;
 endmodule
 
-module bidir (
+/*module bidir (
     (* iopad_external_pin *)
     input I_PAD,
     input GPIO_IN,
@@ -93,7 +93,8 @@ module bipad (
 );
     assign Q = P;
     assign P = EN ? A : 1'bz;
-endmodule
+endmodule*/
+
 (* abc9_flop, lib_whitebox *)
 module dff(
     output reg Q,

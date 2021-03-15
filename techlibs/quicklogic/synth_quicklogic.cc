@@ -149,8 +149,13 @@ struct SynthQuickLogicPass : public ScriptPass {
         }
 
         if (check_label("prepare"))  {
+            run("ql_inout");
+            if (!verilog_file.empty()) {
+                run("write_verilog -noattr -nohex " + verilog_file);
+            }
             run("proc");
             run("flatten");
+            //run("tribuf -logic");
             run("opt_expr");
             run("opt_clean");
             run("deminout");
@@ -229,7 +234,7 @@ struct SynthQuickLogicPass : public ScriptPass {
         }
 
         if (check_label("iomap")) {
-            run("iopadmap -bits -tinoutpad bipad EN:Q:A:P A:top");
+            //run("iopadmap -bits -tinoutpad bipad EN:Q:A:P A:top");
         }
 
         if (check_label("finalize")) {
@@ -254,7 +259,7 @@ struct SynthQuickLogicPass : public ScriptPass {
 
         if (check_label("verilog")) {
             if (!verilog_file.empty()) {
-                run("write_verilog -noattr -nohex " + verilog_file);
+                //run("write_verilog -noattr -nohex " + verilog_file);
             }
         }
     }
