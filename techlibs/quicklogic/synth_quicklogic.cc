@@ -63,6 +63,10 @@ struct SynthQuickLogicPass : public ScriptPass {
         log("        By default use adder cells in output netlist.\n");
         log("        Specifying this switch turns it off.\n");
         log("\n");
+        log("    -no_bram\n");
+        log("        By default use Block RAM in output netlist.\n");
+        log("        Specifying this switch turns it off.\n");
+        log("\n");
         log("\n");
         log("The following commands are executed by this synthesis command:\n");
         help_script();
@@ -71,6 +75,7 @@ struct SynthQuickLogicPass : public ScriptPass {
 
     string top_opt, edif_file, blif_file, family, currmodule, verilog_file;
     bool inferAdder;
+    bool inferBram;
     bool abcOpt;
 
     void clear_flags() override
@@ -82,6 +87,7 @@ struct SynthQuickLogicPass : public ScriptPass {
         currmodule = "";
         family = "qlf_k4n8";
         inferAdder = true;
+	inferBram = true;
         abcOpt = true;
     }
 
@@ -116,6 +122,10 @@ struct SynthQuickLogicPass : public ScriptPass {
             }
             if (args[argidx] == "-no_adder") {
                 inferAdder = false;
+                continue;
+            }
+            if (args[argidx] == "-no_bram") {
+                inferBram = false;
                 continue;
             }
             if (args[argidx] == "-no_abc_opt") {
@@ -175,6 +185,12 @@ struct SynthQuickLogicPass : public ScriptPass {
             run("opt_clean");
         }
 
+        if (check_label("map_bram", "(skip if -nobram)") && family == "qlf_k6n10" && inferBram) {
+            run("memory_bram -rules +/quicklogic/" + family + "_brams.txt");
+      //      run("pp3_braminit");
+            run("techmap -map +/quicklogic/" + family + "_brams_map.v");
+        }
+
         if (check_label("map_ffram")) {
             run("opt -fast -mux_undef -undriven -fine");
             run("memory_map -iattr -attr !ram_block -attr !rom_block -attr logic_block "
@@ -197,7 +213,14 @@ struct SynthQuickLogicPass : public ScriptPass {
         }
 
         if (check_label("map_ffs")) {
-            
+
+
+	    run("async2sync");
+            std::string techMapArgs = " -map +/quicklogic/" + family + "_ff_map.v";
+	    run("techmap " + techMapArgs);
+            if (family == "qlf_k4n8" || family == "qlf_k6n10" ) {
+		run(stringf("dfflegalize -cell $_DFF_?_ 0 -cell $_DLATCH_?_ x"));
+		}
             run("opt_expr -mux_undef");
             run("simplemap");
             run("opt_expr");
@@ -207,10 +230,24 @@ struct SynthQuickLogicPass : public ScriptPass {
         }
 
         if (check_label("map_luts")) {
-            run("abc -lut 4 ");
-            run("clean");
+	 
+	    if (family == "qlf_k6n10" ) {
+	    	run("abc -lut 6 ");
+	    }
+	    else {
+ 	        run("abc -lut 4 ");
+	    }        
+	    run("clean");
             run("opt_lut");
         }
+
+	if (check_label("map_cells")){
+	   //TODO: Fix the missing out-going edges error when lut is infered out of lut6 mode
+            std::string techMapArgs;
+            techMapArgs = "-map +/quicklogic/" + family + "_lut_map.v";
+	    run("techmap " + techMapArgs); 
+	    run("clean");
+	}
 
         if (check_label("check")) {
             run("autoname");
