@@ -49,8 +49,10 @@ module _80_quicklogic_alu (A, B, CI, BI, X, Y, CO);
             if (_TECHMAP_CONSTMSK_CI_ == 1) begin
 
                 localparam INIT = (_TECHMAP_CONSTVAL_CI_ == 0) ?
-                    16'b0110_0000_0000_0001 :
-                    16'b1001_0000_0000_0111;
+                    16'b1001_1111_1111_1110 :
+                    16'b0110_1111_1111_1000;
+                    //16'b0110_0000_0000_0001 :
+                    //16'b1001_0000_0000_0111;
 
                 // LUT4 configured as 1-bit adder with CI=const
                 adder_lut4 #(
@@ -68,7 +70,8 @@ module _80_quicklogic_alu (A, B, CI, BI, X, Y, CO);
 
                 // LUT4 configured as passthrough to drive CI of the next stage
                 adder_lut4 #(
-                    .LUT(16'b1100_0000_0000_0011),
+                    .LUT(16'b0011_1111_1111_1100),
+                    //.LUT(16'b1100_0000_0000_0011),
                     .IN2_IS_CIN(1'b0)
                 ) lut_ci (
                     .in({1'b0,CI,1'b0,1'b0}), 
@@ -92,7 +95,8 @@ module _80_quicklogic_alu (A, B, CI, BI, X, Y, CO);
             
             // LUT4 configured as full 1-bit adder
             adder_lut4 #(
-                    .LUT(16'b0110_1001_0110_0001),
+                    .LUT(16'b1001_0110_1001_1110),
+                    //.LUT(16'b0110_1001_0110_0001),
                     .IN2_IS_CIN(1'b1)
                 ) lut_adder (
                     .in({AA[i], BB[i], 1'b0, 1'b0}),
@@ -113,7 +117,8 @@ module _80_quicklogic_alu (A, B, CI, BI, X, Y, CO);
             // LUT4 configured for passing its CI input to output. This should
             // get pruned if the actual CO port is not connected anywhere.
             adder_lut4 #(
-                    .LUT(16'b0000_1111_0000_1111),
+                    .LUT(16'b1111_0000_1111_0000),
+                    //.LUT(16'b0000_1111_0000_1111),
                     .IN2_IS_CIN(1'b1)
                 ) lut_co (
                     .in({1'b0, co, 1'b0, 1'b0}),
