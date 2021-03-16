@@ -215,12 +215,13 @@ struct SynthQuickLogicPass : public ScriptPass {
         if (check_label("map_ffs")) {
 
 
-	    run("async2sync");
+//	    run("async2sync");
             std::string techMapArgs = " -map +/quicklogic/" + family + "_ff_map.v";
-	    run("techmap " + techMapArgs);
+
             if (family == "qlf_k4n8" || family == "qlf_k6n10" ) {
 		run(stringf("dfflegalize -cell $_DFF_?_ 0 -cell $_DLATCH_?_ x"));
 		}
+	    run("techmap " + techMapArgs);
             run("opt_expr -mux_undef");
             run("simplemap");
             run("opt_expr");
