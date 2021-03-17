@@ -221,11 +221,6 @@ struct SynthQuickLogicPass : public ScriptPass {
             run("opt_lut");
         }
 
-        if (check_label("map_cells")) {
-            run("techmap -map +/quicklogic/" + family + "_cells_map.v");
-            run("clean");
-        }
-
         if (check_label("check")) {
             run("autoname");
             run("hierarchy -check");
@@ -259,7 +254,7 @@ struct SynthQuickLogicPass : public ScriptPass {
 
         if (check_label("verilog")) {
             if (!verilog_file.empty()) {
-                //run("write_verilog -noattr -nohex " + verilog_file);
+                run("write_verilog -noattr -nohex " + verilog_file);
             }
         }
     }
