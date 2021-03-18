@@ -17,211 +17,198 @@
  *
  */
 
-#include "kernel/yosys.h"
 #include "kernel/sigtools.h"
+#include "kernel/yosys.h"
 
 USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
 
 struct QL_inoutPass : public Pass {
-	QL_inoutPass() : Pass("ql_inout", "replace inout ports with inout_$in, inout_$out and inout_$en") {}
-	void help() override
-	{
-		log("\n");
-		log("    ql_inout [options] [selection]\n");
-		log("\n");
-		log("\"Replace\" inout ports with input, output and enable ports, if possible.\n");
-		log("\n");
-	}
-	SigMap assign_map;
-	void execute(std::vector<std::string> args, RTLIL::Design *design) override
-	{
-		log_header(design, "Executing QL_INOUT pass (replace inout ports with input, output and enable ports).\n");
 
-		extra_args(args, 1, design);
+    struct InoutPortInfo {
+        std::string inoutWireName;		   // inout wire name present in design
+        RTLIL::Wire *newOutPort;		   // Output wire name created to replace inout
+        RTLIL::Wire *newEnablePort;		   // Enable wire name created to replace inout
+        std::vector<std::string> inoutConnSigName; // connected signal name which are driven by this wire
 
-		bool keep_running = true;
+        InoutPortInfo(const std::string &inoutWire, RTLIL::Wire *outPort, RTLIL::Wire *enablePort,
+                const std::vector<std::string> sigVec = std::vector<std::string>())
+            : inoutWireName(inoutWire), newOutPort(outPort), newEnablePort(enablePort), inoutConnSigName(sigVec)
+        {
+        }
+    };
 
-		while (keep_running)
-		{
-			keep_running = false;
+    QL_inoutPass() : Pass("ql_inout", "replace inout ports with inout_$in, inout_$out and inout_$en") {}
+    void help() override
+    {
+        log("\n");
+        log("    ql_inout [options] [selection]\n");
+        log("\n");
+        log("\"Replace\" inout ports with input, output and enable ports, if possible.\n");
+        log("\n");
+    }
 
-			for (auto module : design->selected_modules())
-			{
-				SigMap sigmap(module);
-				std::set<Wire*> inoutWires;
+    SigMap assign_map;
+    void execute(std::vector<std::string> args, RTLIL::Design *design) override
+    {
+        log_header(design, "Executing QL_INOUT pass (replace inout ports with input, output and enable ports).\n");
 
-				for (auto wire : module->wires())
-				{
-					if (wire->port_input && wire->port_output)
-					{
-						inoutWires.insert(wire);
-					}
-				}
+        extra_args(args, 1, design);
 
-				std::map<RTLIL::IdString, RTLIL::IdString > inoutConnMap;
-				for (auto connection : module->connections()) 
-				{
-					if (inoutWires.find(connection.first.as_wire()) != inoutWires.end()) {
-						/*printf("**** sig.first: %s, sig.second: %s\n", connection.first.as_wire()->name.c_str(),
-						       log_signal(connection.second));*/
-						inoutConnMap.emplace(connection.first.as_wire()->name, log_signal(connection.second));
-					}
-				}
+        bool keep_running = true;
 
-				std::map<RTLIL::IdString, Wire*> inoutEnableMap; 
-				std::map<RTLIL::IdString, Wire*> inoutOutputMap; 
-				std::map<RTLIL::IdString, Wire*> inoutInputMap; 
-				
-				for (auto wire : inoutWires)
-				{
-					string currWireName(wire->name.c_str());
-					string wireInName = currWireName + "_$in";
-					string wireOutName = currWireName + "_$out";
-					string wireEnName = currWireName + "_$en";
+        while (keep_running) {
+            keep_running = false;
 
-					Wire *outWire = module->addWire(wireOutName, wire);
-					if (outWire) {
-						outWire->port_output = true;
-						outWire->port_input = false;
-						inoutOutputMap.emplace(wire->name, outWire);
-					}
-					Wire *enWire = module->addWire(wireEnName, wire);
-					if (enWire) {
-						enWire->port_output = true;
-						enWire->port_input = false;
-						inoutEnableMap.emplace(wire->name, enWire);
-					}
-					Wire *inWire = module->addWire(wireInName, wire);
-					if (enWire) {
-						inWire->port_output = false;
-						inWire->port_input = true;
-						inoutInputMap.emplace(wire->name, inWire);
-					}
+            for (auto module : design->selected_modules()) {
+                SigMap sigmap(module);
 
-					//module->rename(wire, wireInName);
-					//wire->port_output = false;
+                // key is inout port name, value is object containing its information
+                std::map<std::string, InoutPortInfo> inoutMap;
 
-					//printf("-------+++ wire name: %s\n", wire->name.c_str());
-				}
-				module->fixup_ports();
+                // find all inout ports
+                std::vector<Wire *> inoutWireVec;
+                for (auto *wire : module->wires()) {
+                    if (wire->port_input && wire->port_output) {
+                        inoutWireVec.push_back(wire);
+                    }
+                }
 
-				std::map<RTLIL::IdString, RTLIL::SigSpec > enSigMap;
+                for (auto *wire : inoutWireVec) {
+                    if (!wire)
+                        continue;
 
-				for (auto cell : module->cells())
-				{
-					//printf("+++ cell_name: %s\n", cell->name.c_str());
+                    string currWireName(wire->name.c_str());
+                    string wireOutName = currWireName + "_$out";
+                    string wireEnName = currWireName + "_$en";
 
-					for (auto &conn : cell->connections()) {
-						//printf("===== conn.first: %s, conn.second: %s\n", RTLIL::id2cstr(conn.first), log_signal(conn.second));
-						
-						if (conn.first == ID::Y && cell->type.in(ID($mux), ID($pmux), ID($_MUX_), ID($_TBUF_), ID($tribuf))) {
-							bool tribuf = cell->type.in(ID($_TBUF_), ID($tribuf));
+                    Wire *outWire = module->addWire(wireOutName, wire);
+                    if (outWire) {
+                        outWire->port_output = true;
+                        outWire->port_input = false;
+                    }
+                    Wire *enWire = module->addWire(wireEnName, wire);
+                    if (enWire) {
+                        enWire->port_output = true;
+                        enWire->port_input = false;
+                    }
 
-							if (!tribuf) {
-								for (auto &c : cell->connections()) {
-									if (!c.first.in(ID::A, ID::B))
-										continue;
-									for (auto b : sigmap(c.second))
-										if (b == State::Sz)
-											tribuf = true;
-								}
-							}
+                    InoutPortInfo obj(currWireName, outWire, enWire);
+                    inoutMap.emplace(currWireName, obj);
+                }
 
-							if (tribuf) {
-								//printf("==== there is a tribuf \n");
-								//RTLIL::SigSpec sig_a = assign_map(cell->getPort(ID::A));
-								//RTLIL::SigSpec sig_b = assign_map(cell->getPort(ID::B));
-								RTLIL::SigSpec sig_s = assign_map(cell->getPort(ID::S));
-								RTLIL::SigSpec sig_y = assign_map(cell->getPort(ID::Y));
+                // key: connected signal name to inout port
+                // value: its InoutPortInfo object
+                std::map<std::string, const InoutPortInfo &> connSigInoutMap;
+                // gather all connections to inout ports
+                for (auto connection : module->connections()) {
+                    std::string wireName(log_signal(connection.first));
+                    auto pos = inoutMap.find(wireName);
+                    if (pos != inoutMap.end()) {
+                        auto &currInoutObj = pos->second;
+                        auto &inputConnSigNameVec = currInoutObj.inoutConnSigName;
+                        inputConnSigNameVec.push_back(log_signal(connection.second));
+                        connSigInoutMap.emplace(log_signal(connection.second), currInoutObj);
+                    }
+                }
 
-								enSigMap.emplace(log_signal(sig_y), sig_s);
-								//printf("--- sig_s: %s\n", log_signal(sig_s));
-								
-							}
-						}
-					}
-				}
+                // key: ouput signal of a cell, value: enable signal of a cell
+                std::map<RTLIL::IdString, RTLIL::SigSpec> enSigMap;
 
-				for (auto wire : module->wires()) 
-				{
-					auto pos = inoutConnMap.find(wire->name);
-					if (pos != inoutConnMap.end()) {
+                // find tribuf cells
+                for (auto cell : module->cells()) {
 
-						//printf("=====wire_name: %s, width: %d, start: %d, id: %d\n", wire->name.c_str(), wire->width, 
-						//wire->start_offset, wire->port_id);
-						vector<SigSig> new_connections;
+                    for (auto &conn : cell->connections()) {
 
-						auto &connectionVec = module->connections();
-						//printf("1---- connection size: %lu ..\n", connectionVec.size());
+                        if (conn.first == ID::Y && cell->type.in(ID($mux), ID($pmux), ID($_MUX_), ID($_TBUF_), ID($tribuf))) {
+                            bool tribuf = cell->type.in(ID($_TBUF_), ID($tribuf));
 
-						for (auto &currConn : connectionVec)
-						{
-							auto currPos = inoutOutputMap.find(currConn.first.as_wire()->name);
-							if (currPos != inoutOutputMap.end())
-							{
-								SigSig new_conn;
-								new_conn.first.append(currPos->second);
-								new_conn.second.append(currConn.second);
-								new_connections.push_back(new_conn);
-							} else 
-							{
-								auto currInPos = inoutInputMap.find(currConn.first.as_wire()->name);
-								if (currInPos != inoutInputMap.end()) 
-								{
-									SigSig new_conn;
-									new_conn.first.append(currConn.second);
-									new_conn.second.append(currInPos->second);
-									new_connections.push_back(new_conn);
-								} else {
-									SigSig new_conn;
-									new_conn.first.append(currConn.second);
-									new_conn.second.append(currConn.second);
-									new_connections.push_back(new_conn);
-								}
-							}
-						}
+                            if (!tribuf) {
+                                for (auto &c : cell->connections()) {
+                                    if (!c.first.in(ID::A, ID::B))
+                                        continue;
+                                    for (auto b : sigmap(c.second))
+                                        if (b == State::Sz)
+                                            tribuf = true;
+                                }
+                            }
 
-						auto connPos = enSigMap.find(pos->second);
-						if (connPos != enSigMap.end())
-						{
-							auto connSig = connPos->second;
+                            if (tribuf) {
+                                RTLIL::SigSpec sig_s = assign_map(cell->getPort(ID::S));
+                                RTLIL::SigSpec sig_y = assign_map(cell->getPort(ID::Y));
 
-							RTLIL::SigSpec sig_en = assign_map(connSig);
-							for (int i = 0; i < abs(wire->width - wire->start_offset - 1); ++i) 
-							{
-								sig_en.append(assign_map(connSig));
-							}
+                                enSigMap.emplace(log_signal(sig_y), sig_s);
+                            }
+                        }
+                    }
+                }
 
-							auto enPos = inoutEnableMap.find(wire->name);
-							if (enPos != inoutEnableMap.end()) 
-							{
-								SigSig new_conn;
-								new_conn.first.append(enPos->second);
-								new_conn.second.append(sig_en);
-								new_connections.push_back(new_conn);
-								module->new_connections(new_connections);
-							}
-						}
-					}
-				}
+                // Replace inout wires with bidir_$in (if bidir act as input) in the connection, bidir_$out (if bidir act
+                // as output) or bidir_$en (if bidir act as enable)
+                for (auto *wire : inoutWireVec) {
+                    if (!wire)
+                        continue;
 
-				/*for (auto &proc : module->processes) 
-				{
-					//printf("---- proc_name: %s\n", proc.second->name.c_str());
-					for (auto sync : proc.second->syncs)
-					{
-						//printf("+++ sync: %s\n", log_signal(sync->signal));
-						for (auto &action : sync->actions) 
-						{
-							printf("===== action.first: %s, action.second: %s\n", log_signal(action.first),
-							       log_signal(action.second));
-						}
-					}
-				}*/
-			}
-		}
-	}
+                    std::string currWire(wire->name.c_str());
+
+                    vector<SigSig> new_connections;
+
+                    auto &connectionVec = module->connections();
+
+                    auto pos = inoutMap.find(currWire);
+
+                    for (auto &currConn : connectionVec) {
+                        if (string(currConn.first.as_wire()->name.c_str()) == currWire) {
+                            if (pos != inoutMap.end()) {
+                                SigSig new_conn;
+                                auto &currInoutObj = pos->second;
+                                new_conn.first.append(currInoutObj.newOutPort);
+                                new_conn.second.append(currConn.second);
+                                new_connections.push_back(new_conn);
+                            }
+                        } else {
+                            SigSig new_conn;
+                            new_conn.first.append(currConn.first);
+                            new_conn.second.append(currConn.second);
+                            new_connections.push_back(new_conn);
+                        }
+                    }
+
+                    if (pos == inoutMap.end())
+                        continue;
+
+                    auto &currInoutObj = pos->second;
+                    auto &inputConnSigNameVec = currInoutObj.inoutConnSigName;
+                    for (auto sigName : inputConnSigNameVec) {
+                        auto connPos = enSigMap.find(sigName);
+                        if (connPos != enSigMap.end()) {
+                            auto connSig = connPos->second;
+
+                            RTLIL::SigSpec sig_en = assign_map(connSig);
+                            for (int i = 0; i < abs(wire->width - wire->start_offset - 1); ++i) {
+                                sig_en.append(assign_map(connSig));
+                            }
+
+                            if (currInoutObj.newEnablePort) {
+                                SigSig new_conn;
+                                string enWireName(currInoutObj.newEnablePort->name.c_str());
+                                new_conn.first.append(assign_map(currInoutObj.newEnablePort));
+                                new_conn.second.append(sig_en);
+                                new_connections.push_back(new_conn);
+                            }
+                        }
+                    }
+                    module->new_connections(new_connections);
+
+                    string wireInName = currWire + "_$in";
+                    wire->port_output = false;
+                    module->rename(wire, wireInName);
+                }
+
+                module->fixup_ports();
+            }
+        }
+    }
 } DeminoutPass;
 
 PRIVATE_NAMESPACE_END
