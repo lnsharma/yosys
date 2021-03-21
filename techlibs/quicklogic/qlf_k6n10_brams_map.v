@@ -2,22 +2,25 @@
 module \$__QLF_RAM16K (
 	output [31:0] RDATA,
 	input         RCLK, RE,
-	input  [11:0] RADDR,
+	input  [8:0] RADDR,
 	input         WCLK, WE,
-	input  [11:0] WADDR,
+	input  [8:0] WADDR,
+	input  [31:0] WENB,
 	input  [31:0] WDATA
 );
 
 	generate
-			dual_port_ram #()
+			DP_RAM16K #()
 				 _TECHMAP_REPLACE_ (
 				.d_out(RDATA),
-				.clk (RCLK ),
-				.ren   (RE   ),
+				.rclk (RCLK ),
+				.wclk (WCLK ),
+				.ren  (RE   ),
 				.raddr(RADDR),
-				.wen   (WE   ),
+				.wen  (WE   ),
 				.waddr(WADDR),
-				.d_in(WDATA)
+				.wenb (WENB ),
+				.d_in (WDATA)
 				);
 	endgenerate
 
@@ -33,110 +36,176 @@ module \$__QLF_RAM16K_M0 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN
 	input CLK2;
 	input CLK3;
 
-	input [7:0] A1ADDR;
+	input [8:0] A1ADDR;
 	output [31:0] A1DATA;
 	input A1EN;
 
-	input [7:0] B1ADDR;
+	input [8:0] B1ADDR;
 	input [31:0] B1DATA;
-	input [15:0] B1EN;
+	input B1EN;
 
-	wire [10:0] A1ADDR_11 = A1ADDR;
-	wire [10:0] B1ADDR_11 = B1ADDR;
+	wire [31:0] WENB;
+	assign WENB = 32'hFFFFFFFF;
 
 	\$__QLF_RAM16K #()
 		 _TECHMAP_REPLACE_ (
 		.RDATA(A1DATA),
-		.RADDR(A1ADDR_11),
+		.RADDR(A1ADDR),
 		.RCLK(CLK2),
-		.RE(1'b1),
+		.RE(A1EN),
 		.WDATA(B1DATA),
-		.WADDR(B1ADDR_11),
+		.WADDR(B1ADDR),
 		.WCLK(CLK3),
-		.WE(1'b1)
+		.WE(B1EN),
+		.WENB(WENB)
 	);
 endmodule
 
-// TODO: Test with corner case
 
-module \$__QLF_RAM16K_M12 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
-	parameter CFG_ABITS = 10;
-	parameter CFG_DBITS = 16;
+module \$__QLF_RAM16K_M1 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
 	parameter [0:0] CLKPOL2 = 1;
 	parameter [0:0] CLKPOL3 = 1;
 
 	parameter [4095:0] INIT = 4096'bx;
 
-/*	localparam MODE =
-		CFG_ABITS ==  9 ? 1 :
-		CFG_ABITS == 10 ? 1 :
-		CFG_ABITS == 11 ? 2 : 'bx;*/
-	localparam MODE =
-		CFG_ABITS == 10 ? 1 :
-		CFG_ABITS == 11 ? 2 : 'bx;
+	input CLK2;
+	input CLK3;
+
+	input [9:0] A1ADDR;
+	output [31:0] A1DATA;
+	input A1EN;
+
+	input [9:0] B1ADDR;
+	input [31:0] B1DATA;
+	input B1EN;
+
+	wire [31:0] WENB;
+	wire [31:0] WDATA;
+
+	generate
+		wire A1BAR;
+		assign A1BAR = ~A1ADDR[0];
+		assign WDATA = { {2{B1DATA[15:0]}}};
+	endgenerate
+
+	assign WENB = { {16{A1ADDR[0]}} , {16{A1BAR}}};
+
+
+	\$__QLF_RAM16K #()
+		 _TECHMAP_REPLACE_ (
+		.RDATA(A1DATA),
+		.RADDR(A1ADDR),
+		.RCLK(CLK2),
+		.RE(A1EN),
+		.WDATA(WDATA),
+		.WADDR(B1ADDR[9:1]),
+		.WCLK(CLK3),
+		.WENB(WENB),
+		.WE(B1EN)
+	);
+
+endmodule
+
+module \$__QLF_RAM16K_M2 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
+
+	parameter [0:0] CLKPOL2 = 1;
+	parameter [0:0] CLKPOL3 = 1;
+
+	parameter [4095:0] INIT = 4096'bx;
 
 	input CLK2;
 	input CLK3;
 
-	input [CFG_ABITS-1:0] A1ADDR;
-	output [CFG_DBITS-1:0] A1DATA;
+	input [10:0] A1ADDR;
+	output [31:0] A1DATA;
 	input A1EN;
 
-	input [CFG_ABITS-1:0] B1ADDR;
-	input [CFG_DBITS-1:0] B1DATA;
+	input [10:0] B1ADDR;
+	input [7:0] B1DATA;
 	input B1EN;
 
-	wire [10:0] A1ADDR_11 = A1ADDR;
-	wire [10:0] B1ADDR_11 = B1ADDR;
+	wire [31:0] WENB;
+	wire [31:0] WDATA;
 
-	wire [15:0] A1DATA_16, B1DATA_16;
-
-/*	generate
-		if (MODE == 1) begin
-			assign A1DATA = {A1DATA_16[14], A1DATA_16[12], A1DATA_16[10], A1DATA_16[ 8],
-			                 A1DATA_16[ 6], A1DATA_16[ 4], A1DATA_16[ 2], A1DATA_16[ 0]};
-			assign {B1DATA_16[14], B1DATA_16[12], B1DATA_16[10], B1DATA_16[ 8],
-			        B1DATA_16[ 6], B1DATA_16[ 4], B1DATA_16[ 2], B1DATA_16[ 0]} = B1DATA;
-		end
-		if (MODE == 2) begin
-			assign A1DATA = {A1DATA_16[13], A1DATA_16[9], A1DATA_16[5], A1DATA_16[1]};
-			assign {B1DATA_16[13], B1DATA_16[9], B1DATA_16[5], B1DATA_16[1]} = B1DATA;
-		end
-		if (MODE == 3) begin
-			assign A1DATA = {A1DATA_16[11], A1DATA_16[3]};
-			assign {B1DATA_16[11], B1DATA_16[3]} = B1DATA;
-		end
-	endgenerate*/
 	generate
-		if (MODE == 1) begin
-			assign A1DATA = {A1DATA_16[30], A1DATA_16[28], A1DATA_16[26], A1DATA_16[ 24],
-			                 A1DATA_16[ 22], A1DATA_16[ 20], A1DATA_16[ 18], A1DATA_16[ 16],
-					 A1DATA_16[14], A1DATA_16[12], A1DATA_16[10], A1DATA_16[ 8],
-			                 A1DATA_16[ 6], A1DATA_16[ 4], A1DATA_16[ 2], A1DATA_16[ 0]};					
-			assign {B1DATA_16[30], B1DATA_16[28], B1DATA_16[26], B1DATA_16[ 24],
-			        B1DATA_16[ 22], B1DATA_16[ 20], B1DATA_16[ 18], B1DATA_16[ 16],
-				B1DATA_16[14], B1DATA_16[12], B1DATA_16[10], B1DATA_16[ 8],
-			        B1DATA_16[ 6], B1DATA_16[ 4], B1DATA_16[ 2], B1DATA_16[ 0]} = B1DATA;			
-		end
-		if (MODE == 2) begin
-			assign A1DATA = {A1DATA_16[14], A1DATA_16[12], A1DATA_16[10], A1DATA_16[ 8],
-			                 A1DATA_16[ 6], A1DATA_16[ 4], A1DATA_16[ 2], A1DATA_16[ 0]};
-			assign {B1DATA_16[14], B1DATA_16[12], B1DATA_16[10], B1DATA_16[ 8],
-			        B1DATA_16[ 6], B1DATA_16[ 4], B1DATA_16[ 2], B1DATA_16[ 0]} = B1DATA;
-		end
+		wire A1BAR0, A1BAR1;
+		assign A1BAR0 = ~A1ADDR[0];
+		assign A1BAR1 = ~A1ADDR[1];
+		assign WDATA = { {4{B1DATA[7:0]}}};
 	endgenerate
 
-	\$__ICE40_RAM4K #()
+	assign WENB = { {8{A1ADDR[1]& A1ADDR[0]}},
+			{8{A1ADDR[1]& A1BAR0}}   , 
+			{8{A1BAR1   & A1ADDR[0]}}, 
+			{8{A1BAR1   & A1BAR0}}}	 ;
+
+
+	\$__QLF_RAM16K #()
 		 _TECHMAP_REPLACE_ (
-		.RDATA(A1DATA_16),
-		.RADDR(A1ADDR_11),
+		.RDATA(A1DATA),
+		.RADDR(A1ADDR),
 		.RCLK(CLK2),
-		.RE(1'b1),
-		.WDATA(B1DATA_16),
-		.WADDR(B1ADDR_11),
+		.RE(A1EN),
+		.WDATA(B1DATA),
+		.WADDR(B1ADDR[10:2]),
 		.WCLK(CLK3),
-		.WE(1'b1)
+		.WENB(WENB),
+		.WE(B1EN)
 	);
+
+endmodule
+
+module \$__QLF_RAM16K_M3 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
+
+	parameter [0:0] CLKPOL2 = 1;
+	parameter [0:0] CLKPOL3 = 1;
+
+	parameter [4095:0] INIT = 4096'bx;
+
+	input CLK2;
+	input CLK3;
+
+	input [11:0] A1ADDR;
+	output [31:0] A1DATA;
+	input A1EN;
+
+	input [11:0] B1ADDR;
+	input [3:0] B1DATA;
+	input B1EN;
+
+	wire [31:0] WENB;
+	wire [31:0] WDATA;
+
+	generate
+		assign WDATA = { {8{B1DATA[3:0]}}};
+		wire A1BAR0, A1BAR1, A1BAR2;
+		assign A1BAR0 = ~A1ADDR[0];
+		assign A1BAR1 = ~A1ADDR[1];
+		assign A1BAR2 = ~A1ADDR[2];
+	endgenerate
+
+		assign WENB = { {4{A1ADDR[2] &A1ADDR[1] & A1ADDR[0]}}, 
+				{4{A1ADDR[2] &A1ADDR[1] & A1BAR0}}   , 
+				{4{A1ADDR[2] &A1BAR1    & A1ADDR[0]}}, 
+				{4{A1ADDR[2] &A1BAR1    & A1BAR0}}   , 
+				{4{A1BAR2    &A1ADDR[1] & A1ADDR[0]}}, 
+				{4{A1BAR2    &A1ADDR[1] & A1BAR0}}   , 
+				{4{A1BAR2    &A1BAR1    & A1ADDR[0]}}, 
+				{4{A1BAR2    &A1BAR1    & A1BAR0}}}  ; 
+
+	\$__QLF_RAM16K #()
+		 _TECHMAP_REPLACE_ (
+		.RDATA(A1DATA),
+		.RADDR(A1ADDR),
+		.RCLK(CLK2),
+		.RE(A1EN),
+		.WDATA(B1DATA),
+		.WADDR(B1ADDR[11:3]),
+		.WCLK(CLK3),
+		.WENB(WENB),
+		.WE(B1EN)
+	);
+
 endmodule
 
