@@ -55,5 +55,6 @@ module _80_quicklogic_alu (A, B, CI, BI, X, Y, CO);
 	     );
 	   end
 	   endgenerate
+	assign X = AA ^ BB;
 endmodule
 
