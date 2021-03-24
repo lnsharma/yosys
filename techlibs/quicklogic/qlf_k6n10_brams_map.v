@@ -28,8 +28,7 @@ endmodule
 
 
 module \$__QLF_RAM16K_M0 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
-	parameter [0:0] CLKPOL2 = 1;
-	parameter [0:0] CLKPOL3 = 1;
+
 
 	parameter [4095:0] INIT = 4096'bx;
 
@@ -64,8 +63,6 @@ endmodule
 
 module \$__QLF_RAM16K_M1 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
-	parameter [0:0] CLKPOL2 = 1;
-	parameter [0:0] CLKPOL3 = 1;
 
 	parameter [4095:0] INIT = 4096'bx;
 
@@ -109,8 +106,6 @@ endmodule
 
 module \$__QLF_RAM16K_M2 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
-	parameter [0:0] CLKPOL2 = 1;
-	parameter [0:0] CLKPOL3 = 1;
 
 	parameter [4095:0] INIT = 4096'bx;
 
@@ -157,9 +152,6 @@ module \$__QLF_RAM16K_M2 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN
 endmodule
 
 module \$__QLF_RAM16K_M3 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
-
-	parameter [0:0] CLKPOL2 = 1;
-	parameter [0:0] CLKPOL3 = 1;
 
 	parameter [4095:0] INIT = 4096'bx;
 
