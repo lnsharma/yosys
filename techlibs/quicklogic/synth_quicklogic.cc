@@ -41,7 +41,7 @@ struct SynthQuickLogicPass : public ScriptPass {
         log("        run synthesis for the specified QuickLogic architecture\n");
         log("        generate the synthesis netlist for the specified family.\n");
         log("        supported values:\n");
-        log("        - qlf_k4n8: qlf_k4n8 \n");
+        log("        - qlf_k6n10: qlf_k6n10 \n");
         log("\n");
         log("    -no_abc_opt\n");
         log("        By default most of ABC logic optimization features is\n");
@@ -85,7 +85,7 @@ struct SynthQuickLogicPass : public ScriptPass {
         blif_file = "";
         verilog_file = "";
         currmodule = "";
-        family = "qlf_k4n8";
+        family = "qlf_k6n10";
         inferAdder = true;
 	inferBram = true;
         abcOpt = true;
@@ -215,8 +215,8 @@ struct SynthQuickLogicPass : public ScriptPass {
 
             std::string techMapArgs = " -map +/quicklogic/" + family + "_ffs_map.v";
 
-            if (family == "qlf_k4n8" || family == "qlf_k6n10" ) {
-		run("dfflegalize -cell $_DFF_?_ 0 -cell $_DFF_P?0_ 0 -cell $_DLATCH_P_ x");
+            if (family == "qlf_k6n10") {
+		run("dfflegalize -cell $_DFF_P_ 0 -cell $_DLATCH_P_ x");
 		}
 	    run("techmap " + techMapArgs);
             run("opt_expr -mux_undef");
@@ -229,12 +229,7 @@ struct SynthQuickLogicPass : public ScriptPass {
 
         if (check_label("map_luts")) {
 	 
-	    if (family == "qlf_k6n10" ) {
-	    	run("abc -lut 6 ");
-	    }
-	    else {
- 	        run("abc -lut 4 ");
-	    }        
+	    run("abc -lut 6 ");       
 	    run("clean");
             run("opt_lut");
         }
