@@ -27,13 +27,12 @@ module \$__QLF_RAM16K (
 endmodule
 
 
-module \$__QLF_RAM16K_M0 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
+module \$__QLF_RAM16K_M0 (CLK1, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
 
 	parameter [4095:0] INIT = 4096'bx;
 
-	input CLK2;
-	input CLK3;
+	input CLK1;
 
 	input [8:0] A1ADDR;
 	output [31:0] A1DATA;
@@ -50,24 +49,23 @@ module \$__QLF_RAM16K_M0 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN
 		 _TECHMAP_REPLACE_ (
 		.RDATA(A1DATA),
 		.RADDR(A1ADDR),
-		.RCLK(CLK2),
+		.RCLK(CLK1),
 		.RE(A1EN),
 		.WDATA(B1DATA),
 		.WADDR(B1ADDR),
-		.WCLK(CLK3),
+		.WCLK(CLK1),
 		.WE(B1EN),
 		.WENB(WENB)
 	);
 endmodule
 
 
-module \$__QLF_RAM16K_M1 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
+module \$__QLF_RAM16K_M1 (CLK1, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
 
 	parameter [4095:0] INIT = 4096'bx;
 
-	input CLK2;
-	input CLK3;
+	input CLK1;
 
 	input [9:0] A1ADDR;
 	output [31:0] A1DATA;
@@ -93,24 +91,23 @@ module \$__QLF_RAM16K_M1 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN
 		 _TECHMAP_REPLACE_ (
 		.RDATA(A1DATA),
 		.RADDR(A1ADDR),
-		.RCLK(CLK2),
+		.RCLK(CLK1),
 		.RE(A1EN),
 		.WDATA(WDATA),
 		.WADDR(B1ADDR[9:1]),
-		.WCLK(CLK3),
+		.WCLK(CLK1),
 		.WENB(WENB),
 		.WE(B1EN)
 	);
 
 endmodule
 
-module \$__QLF_RAM16K_M2 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
+module \$__QLF_RAM16K_M2 (CLK1, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
 
 	parameter [4095:0] INIT = 4096'bx;
 
-	input CLK2;
-	input CLK3;
+	input CLK1;
 
 	input [10:0] A1ADDR;
 	output [31:0] A1DATA;
@@ -140,23 +137,22 @@ module \$__QLF_RAM16K_M2 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN
 		 _TECHMAP_REPLACE_ (
 		.RDATA(A1DATA),
 		.RADDR(A1ADDR),
-		.RCLK(CLK2),
+		.RCLK(CLK1),
 		.RE(A1EN),
 		.WDATA(B1DATA),
 		.WADDR(B1ADDR[10:2]),
-		.WCLK(CLK3),
+		.WCLK(CLK1),
 		.WENB(WENB),
 		.WE(B1EN)
 	);
 
 endmodule
 
-module \$__QLF_RAM16K_M3 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
+module \$__QLF_RAM16K_M3 (CLK1, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN);
 
 	parameter [4095:0] INIT = 4096'bx;
 
-	input CLK2;
-	input CLK3;
+	input CLK1;
 
 	input [11:0] A1ADDR;
 	output [31:0] A1DATA;
@@ -190,11 +186,11 @@ module \$__QLF_RAM16K_M3 (CLK2, CLK3, A1ADDR, A1DATA, A1EN, B1ADDR, B1DATA, B1EN
 		 _TECHMAP_REPLACE_ (
 		.RDATA(A1DATA),
 		.RADDR(A1ADDR),
-		.RCLK(CLK2),
+		.RCLK(CLK1),
 		.RE(A1EN),
 		.WDATA(B1DATA),
 		.WADDR(B1ADDR[11:3]),
-		.WCLK(CLK3),
+		.WCLK(CLK1),
 		.WENB(WENB),
 		.WE(B1EN)
 	);

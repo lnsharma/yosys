@@ -7,7 +7,7 @@ bram $__QLF_RAM16K_M0
   wrmode 0 1
   enable 1 1
   transp 0  0
-  clocks 2  3
+  clocks 1  1
   clkpol 1  1
 endbram
 
@@ -20,7 +20,7 @@ bram $__QLF_RAM16K_M1
   wrmode 0 1
   enable 1 1
   transp 0 0
-  clocks 2 3
+  clocks 1 1
   clkpol 1 1
 endbram
 
@@ -33,7 +33,7 @@ bram $__QLF_RAM16K_M2
   wrmode 0 1
   enable 1 1
   transp 0 0
-  clocks 2 3
+  clocks 1 1
   clkpol 1 1
 endbram
 
@@ -46,7 +46,7 @@ bram $__QLF_RAM16K_M3
   wrmode 0 1
   enable 1 1
   transp 0 0
-  clocks 2 3
+  clocks 1 1
   clkpol 1 1
 endbram
 
