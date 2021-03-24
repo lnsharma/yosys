@@ -128,8 +128,8 @@ module _dual_port_sram (
 
         // MODE 0:  512 x 32
         // MODE 1:  1024 x 16
-        // MODE 2: 1024 x 8
-        // MODE 3: 2048 x 4
+        // MODE 2: 2048 x 8
+        // MODE 3: 4096 x 4
         
         integer i;
         reg[31:0] ram[512:0];
